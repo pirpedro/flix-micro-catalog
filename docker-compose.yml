@@ -13,7 +13,7 @@ services:
       - HOST=0.0.0.0
     networks:
       - app-network
-      - rabbitmq_micro-catalog
+      - rabbitmq_codeflix
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
@@ -38,5 +38,5 @@ services:
 networks:
   app-network:
     driver: bridge
-  rabbitmq_micro-catalog:
+  rabbitmq_codeflix:
     external: true
