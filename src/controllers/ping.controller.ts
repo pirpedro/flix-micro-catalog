@@ -1,7 +1,8 @@
 import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
-import {get, Request, ResponseObject, RestBindings} from '@loopback/rest';
+import {get, getModelSchemaRef, post, Request, requestBody, ResponseObject, RestBindings} from '@loopback/rest';
 import {CategoryRepository} from '../repositories';
+import {Category} from '../models'
 
 /**
  * OpenAPI response for ping()
@@ -55,8 +56,32 @@ export class PingController {
   }
 
   @get('/categories')
-  index(){
+  async index(){
     return this.categoryRepo.find()
+  }
+
+  @post('/categories',{
+    responses: {
+      '200': {
+        description: 'Category model instance',
+        content: {'application/json': {schema: getModelSchemaRef(Category)}},
+      }
+    }
+  })
+  async create(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Category, {
+            title: 'NewCategory',
+
+          }),
+        },
+      },
+    })
+    category: Category,
+  ): Promise<Category>{
+    return this.categoryRepo.create(category);
   }
 
 
