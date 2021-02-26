@@ -29,7 +29,8 @@
     "migrate": "node ./dist/migrate",
     "prestart": "npm run build",
     "start": "node -r source-map-support/register .",
-    "clean": "lb-clean dist *.tsbuildinfo .eslintcache"
+    "clean": "lb-clean dist *.tsbuildinfo .eslintcache",
+    "console": "node dist/console.js"
   },
   "repository": {
     "type": "git"
@@ -53,11 +54,10 @@
     "@loopback/rest": "^3.2.0",
     "@loopback/rest-explorer": "^2.0.3",
     "@loopback/service-proxy": "^2.0.3",
-    "@types/amqp-connection-manager": "^2.0.10",
-    "@types/amqplib": "^0.5.17",
     "amqp-connection-manager": "^3.2.2",
     "amqplib": "^0.7.0",
     "dotenv": "^8.2.0",
+    "lodash": "^4.17.21",
     "loopback-connector-esv6": "https://github.com/codeedu/loopback-connector-elastic-search/tarball/master",
     "tslib": "^1.10.0"
   },
@@ -65,6 +65,9 @@
     "@loopback/build": "^5.0.1",
     "source-map-support": "^0.5.16",
     "@loopback/testlab": "^3.0.0",
+    "@types/amqp-connection-manager": "^2.0.10",
+    "@types/amqplib": "^0.5.17",
+    "@types/lodash": "^4.14.168",
     "@types/node": "^10.17.19",
     "@typescript-eslint/parser": "^2.27.0",
     "@typescript-eslint/eslint-plugin": "^2.27.0",
