@@ -1,6 +1,7 @@
-import {DefaultCrudRepository, } from '@loopback/repository';
+import {DefaultCrudRepository, EntityNotFoundError} from '@loopback/repository';
 import {Message} from 'amqplib';
 import {pick} from 'lodash';
+import {BaseRepository} from '../repositories/base.repository';
 import {ValidatorService} from './validator.service';
 
 export interface SyncOptions {
@@ -9,27 +10,31 @@ export interface SyncOptions {
   message: Message;
 }
 
+export interface SyncRelationOptions {
+  id: string;
+  relationName: string;
+  relationIds: string[];
+  relationRepo: DefaultCrudRepository<any, any>;
+  repo: BaseRepository<any, any>;
+  message: Message;
+}
+
 export abstract class BaseModelSyncService {
-
-  constructor(
-    public validateService: ValidatorService
-  ){
-
-  }
-  protected async sync({repo, data, message}: SyncOptions){
+  constructor(public validateService: ValidatorService) {}
+  protected async sync({repo, data, message}: SyncOptions) {
     const {id} = data || {};
     const action = this.getAction(message);
     const entity = this.createEntity(data, repo);
-    switch(action) {
+    switch (action) {
       case 'created':
         await this.validateService.validate({
           data: entity,
-          entityClass: repo.entityClass
+          entityClass: repo.entityClass,
         });
         await repo.create(entity);
         break;
       case 'updated':
-        await this.updateOrCreate({repo,id, entity});
+        await this.updateOrCreate({repo, id, entity});
         break;
       case 'deleted':
         await repo.deleteById(id);
@@ -37,21 +42,73 @@ export abstract class BaseModelSyncService {
     }
   }
 
-  protected getAction(message: Message){
+  protected getAction(message: Message) {
     return message.fields.routingKey.split('.')[2];
   }
 
-  protected createEntity(data: any, repo: DefaultCrudRepository<any, any>){
+  protected createEntity(data: any, repo: DefaultCrudRepository<any, any>) {
     return pick(data, Object.keys(repo.entityClass.definition.properties));
   }
 
-  protected async updateOrCreate({repo, id, entity}: {repo: DefaultCrudRepository<any, any>, id: string, entity: any}){
+  protected async updateOrCreate({
+    repo,
+    id,
+    entity,
+  }: {
+    repo: DefaultCrudRepository<any, any>;
+    id: string;
+    entity: any;
+  }) {
     const exists = await repo.exists(id);
     await this.validateService.validate({
       data: entity,
       entityClass: repo.entityClass,
-      ...(exists && {options: {partial: true}})
-    })
-    return exists? repo.updateById(id, entity) : repo.create(entity);
+      ...(exists && {options: {partial: true}}),
+    });
+    return exists ? repo.updateById(id, entity) : repo.create(entity);
+  }
+
+  async syncRelation({
+    id,
+    relationName,
+    relationIds,
+    relationRepo,
+    repo,
+    message,
+  }: SyncRelationOptions) {
+    const fieldsRelation = this.extractFieldsRelation(repo, relationName);
+    const collection = await relationRepo.find({
+      where: {
+        or: relationIds.map(i => ({id: i})),
+      },
+      fields: fieldsRelation,
+    });
+    if (!collection.length) {
+      const error = new EntityNotFoundError(
+        relationRepo.entityClass,
+        relationIds,
+      );
+      error.name = 'EntityNotFound';
+      throw error;
+    }
+
+    const action = this.getAction(message);
+    if (action === 'attached') {
+      await repo.attachRelation(id, relationName, collection);
+    }
+    // await repo.updateById(id, {[relation]: collection})
+  }
+
+  protected extractFieldsRelation(
+    repo: DefaultCrudRepository<any, any>,
+    relation: string,
+  ) {
+    return Object.keys(
+      repo.modelClass.definition.properties[relation].jsonSchema.items
+        .properties,
+    ).reduce((obj: any, field: string) => {
+      obj[field] = true;
+      return obj;
+    }, {});
   }
 }
