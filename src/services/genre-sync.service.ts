@@ -20,6 +20,9 @@ export class GenreSyncService extends BaseModelSyncService {
     exchange: 'amq.topic',
     queue: 'micro-catalog/sync-videos/genre',
     routingKey: 'model.genre.*',
+    queueOptions: {
+      deadLetterExchange: 'dlx.amq.topic',
+    },
   })
   async handler({data, message}: {data: any; message: Message}) {
     await this.sync({repo: this.repo, data, message});
@@ -29,6 +32,9 @@ export class GenreSyncService extends BaseModelSyncService {
     exchange: 'amq.topic',
     queue: 'micro-catalog/sync-videos/genre_categories',
     routingKey: 'model.genre_categories.*',
+    queueOptions: {
+      deadLetterExchange: 'dlx.amq.topic',
+    },
   })
   async handlerCategories({data, message}: {data: any; message: Message}) {
     await this.syncRelation({

@@ -7,7 +7,7 @@ import {BaseModelSyncService} from './base-model-sync.service';
 import {ValidatorService} from './validator.service';
 
 @bind({scope: BindingScope.SINGLETON})
-export class CastMemberService extends BaseModelSyncService{
+export class CastMemberService extends BaseModelSyncService {
   constructor(
     @repository(CastMemberRepository) private repo: CastMemberRepository,
     @service(ValidatorService) private validator: ValidatorService,
@@ -18,9 +18,12 @@ export class CastMemberService extends BaseModelSyncService{
   @rabbitmqSubscribe({
     exchange: 'amq.topic',
     queue: 'micro-catalog/sync-videos/cast_member',
-    routingKey: 'model.cast_member.*'
+    routingKey: 'model.cast_member.*',
+    queueOptions: {
+      deadLetterExchange: 'dlx.amq.topic',
+    },
   })
-  async handler({data, message}: {data:any, message: Message}){
+  async handler({data, message}: {data: any; message: Message}) {
     await this.sync({repo: this.repo, data, message});
   }
 }
